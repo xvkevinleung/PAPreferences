@@ -15,6 +15,7 @@ extern NSString * const PAPreferencesChangedPropertyKey;
     NSDictionary *_properties;
 }
 
+@property (strong, readonly) NSMutableDictionary *dynamicProperties;
 @property (nonatomic, assign) BOOL shouldAutomaticallySynchronize;
 
 + (NSString *)defaultsKeyForPropertyName:(NSString *)key;

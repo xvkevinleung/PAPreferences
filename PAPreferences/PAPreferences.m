@@ -13,30 +13,28 @@
 NSString * const PAPreferencesDidChangeNotification = @"PAPreferencesDidChangeNotification";
 NSString * const PAPreferencesChangedPropertyKey = @"PAPreferencesChangedPropertyKey";
 
-static NSMutableDictionary *_dynamicProperties;
 
-
-NS_INLINE PAPropertyDescriptor * propertyDescriptorForSelector(SEL _cmd) {
+NS_INLINE PAPropertyDescriptor * propertyDescriptorForSelector(id self, SEL _cmd) {
     NSString *selectorString = NSStringFromSelector(_cmd);
-    PAPropertyDescriptor *descriptor = _dynamicProperties[selectorString];
+    PAPropertyDescriptor *descriptor = [[self dynamicProperties] objectForKey:selectorString];
     
     return descriptor;
 }
 
-NS_INLINE NSString * defaultsKeyForSelector(SEL _cmd) {
-    PAPropertyDescriptor *descriptor = propertyDescriptorForSelector(_cmd);
+NS_INLINE NSString * defaultsKeyForSelector(id self, SEL _cmd) {
+    PAPropertyDescriptor *descriptor = propertyDescriptorForSelector(self, _cmd);
     NSString *defaultsKey = descriptor.defaultsKey;
     
     return defaultsKey;
 }
 
 BOOL paprefBoolGetter(id self, SEL _cmd) {
-    NSString *defaultsKey = defaultsKeyForSelector(_cmd);
+    NSString *defaultsKey = defaultsKeyForSelector(self, _cmd);
     return [[self userDefaults] boolForKey:defaultsKey];
 }
 
 void paprefBoolSetter(id self, SEL _cmd, BOOL value) {
-    NSString *defaultsKey = defaultsKeyForSelector(_cmd);
+    NSString *defaultsKey = defaultsKeyForSelector(self, _cmd);
     [[self userDefaults] setBool:value forKey:defaultsKey];
     if ([self shouldAutomaticallySynchronize]) {
         [self synchronize];
@@ -46,12 +44,12 @@ void paprefBoolSetter(id self, SEL _cmd, BOOL value) {
 }
 
 double paprefDoubleGetter(id self, SEL _cmd) {
-    NSString *defaultsKey = defaultsKeyForSelector(_cmd);
+    NSString *defaultsKey = defaultsKeyForSelector(self, _cmd);
     return [[self userDefaults] doubleForKey:defaultsKey];
 }
 
 void paprefDoubleSetter(id self, SEL _cmd, double value) {
-    NSString *defaultsKey = defaultsKeyForSelector(_cmd);
+    NSString *defaultsKey = defaultsKeyForSelector(self, _cmd);
     [[self userDefaults] setDouble:value forKey:defaultsKey];
     if ([self shouldAutomaticallySynchronize]) {
         [self synchronize];
@@ -61,12 +59,12 @@ void paprefDoubleSetter(id self, SEL _cmd, double value) {
 }
 
 float paprefFloatGetter(id self, SEL _cmd) {
-    NSString *defaultsKey = defaultsKeyForSelector(_cmd);
+    NSString *defaultsKey = defaultsKeyForSelector(self, _cmd);
     return [[self userDefaults] floatForKey:defaultsKey];
 }
 
 void paprefFloatSetter(id self, SEL _cmd, float value) {
-    NSString *defaultsKey = defaultsKeyForSelector(_cmd);
+    NSString *defaultsKey = defaultsKeyForSelector(self, _cmd);
     [[self userDefaults] setFloat:value forKey:defaultsKey];
     if ([self shouldAutomaticallySynchronize]) {
         [self synchronize];
@@ -76,12 +74,12 @@ void paprefFloatSetter(id self, SEL _cmd, float value) {
 }
 
 NSInteger paprefIntegerGetter(id self, SEL _cmd) {
-    NSString *defaultsKey = defaultsKeyForSelector(_cmd);
+    NSString *defaultsKey = defaultsKeyForSelector(self, _cmd);
     return [[self userDefaults] integerForKey:defaultsKey];
 }
 
 void paprefIntegerSetter(id self, SEL _cmd, NSInteger value) {
-    NSString *defaultsKey = defaultsKeyForSelector(_cmd);
+    NSString *defaultsKey = defaultsKeyForSelector(self, _cmd);
     [[self userDefaults] setInteger:value forKey:defaultsKey];
     if ([self shouldAutomaticallySynchronize]) {
         [self synchronize];
@@ -91,7 +89,7 @@ void paprefIntegerSetter(id self, SEL _cmd, NSInteger value) {
 }
 
 id paprefObjectGetter(id self, SEL _cmd) {
-    NSString *defaultsKey = defaultsKeyForSelector(_cmd);
+    NSString *defaultsKey = defaultsKeyForSelector(self, _cmd);
     return [[self userDefaults] objectForKey:defaultsKey];
 }
 
@@ -105,7 +103,7 @@ void paprefObjectSetter(id self, SEL _cmd, id value) {
 					format:@"This object is not a valid plist: \n%@.", value];
     }
 #endif
-    NSString *defaultsKey = defaultsKeyForSelector(_cmd);
+    NSString *defaultsKey = defaultsKeyForSelector(self, _cmd);
     [[self userDefaults] setObject:value forKey:defaultsKey];
     if ([self shouldAutomaticallySynchronize]) {
         [self synchronize];
@@ -115,12 +113,12 @@ void paprefObjectSetter(id self, SEL _cmd, id value) {
 }
 
 NSURL *paprefURLGetter(id self, SEL _cmd) {
-    NSString *defaultsKey = defaultsKeyForSelector(_cmd);
+    NSString *defaultsKey = defaultsKeyForSelector(self, _cmd);
     return [[self userDefaults] URLForKey:defaultsKey];
 }
 
 void paprefURLSetter(id self, SEL _cmd, NSURL *value) {
-    NSString *defaultsKey = defaultsKeyForSelector(_cmd);
+    NSString *defaultsKey = defaultsKeyForSelector(self, _cmd);
     [[self userDefaults] setURL:value forKey:defaultsKey];
     if ([self shouldAutomaticallySynchronize]) {
         [self synchronize];
@@ -129,32 +127,32 @@ void paprefURLSetter(id self, SEL _cmd, NSURL *value) {
 }
 
 NSArray *paprefArrayGetter(id self, SEL _cmd) {
-    NSString *defaultsKey = defaultsKeyForSelector(_cmd);
+    NSString *defaultsKey = defaultsKeyForSelector(self, _cmd);
     return [[self userDefaults] arrayForKey:defaultsKey];
 }
 
 NSDictionary *paprefDictionaryGetter(id self, SEL _cmd) {
-    NSString *defaultsKey = defaultsKeyForSelector(_cmd);
+    NSString *defaultsKey = defaultsKeyForSelector(self, _cmd);
     return [[self userDefaults] dictionaryForKey:defaultsKey];
 }
 
 NSData *paprefDataGetter(id self, SEL _cmd) {
-    NSString *defaultsKey = defaultsKeyForSelector(_cmd);
+    NSString *defaultsKey = defaultsKeyForSelector(self, _cmd);
     return [[self userDefaults] dataForKey:defaultsKey];
 }
 
 NSString *paprefStringGetter(id self, SEL _cmd) {
-    NSString *propertyDescriptorName = defaultsKeyForSelector(_cmd);
+    NSString *propertyDescriptorName = defaultsKeyForSelector(self, _cmd);
     return [[self userDefaults] stringForKey:propertyDescriptorName];
 }
 
 NSDate *paprefDateGetter(id self, SEL _cmd) {
-    NSString *propertyDescriptorName = defaultsKeyForSelector(_cmd);
+    NSString *propertyDescriptorName = defaultsKeyForSelector(self, _cmd);
     return [[self userDefaults] objectForKey:propertyDescriptorName];
 }
 
 NSNumber *paprefNumberGetter(id self, SEL _cmd) {
-    NSString *propertyDescriptorName = defaultsKeyForSelector(_cmd);
+    NSString *propertyDescriptorName = defaultsKeyForSelector(self, _cmd);
     return [[self userDefaults] objectForKey:propertyDescriptorName];
 }
 
@@ -168,6 +166,10 @@ void paprefCodableObjectSetter(id self, SEL _cmd, id value) {
     paprefObjectSetter(self, _cmd, data);
 }
 
+
+@interface PAPreferences ()
+@property (strong, readwrite) NSMutableDictionary *dynamicProperties;
+@end
 
 @implementation PAPreferences
 
@@ -189,7 +191,7 @@ void paprefCodableObjectSetter(id self, SEL _cmd, id value) {
 - (instancetype)init {
     if (self = [super init]) {
         _shouldAutomaticallySynchronize = YES;
-        _dynamicProperties = [[NSMutableDictionary alloc] init];
+        self.dynamicProperties = [[NSMutableDictionary alloc] init];
         unsigned int cProps;
         objc_property_t *properties = class_copyPropertyList([self class], &cProps);
         for (int i=0; i<cProps; i++) {
@@ -221,8 +223,8 @@ void paprefCodableObjectSetter(id self, SEL _cmd, id value) {
                 } else {
                     if ([self isValidType:type]) {
                         NSString *defaultsKey = [[self class] defaultsKeyForPropertyName:name];
-                        _dynamicProperties[getterName] = [[PAPropertyDescriptor alloc] initWithDefaultsKey:defaultsKey type:type isSetter:NO];
-                        _dynamicProperties[setterName] = [[PAPropertyDescriptor alloc] initWithDefaultsKey:defaultsKey type:type isSetter:YES];
+                        self.dynamicProperties[getterName] = [[PAPropertyDescriptor alloc] initWithDefaultsKey:defaultsKey type:type isSetter:NO];
+                        self.dynamicProperties[setterName] = [[PAPropertyDescriptor alloc] initWithDefaultsKey:defaultsKey type:type isSetter:YES];
                     } else {
                         NSLog(@"Type of %@ is not supported by PAPreferences.", name);
                     }
@@ -294,7 +296,7 @@ NS_INLINE NSString * classNameForTypeString(NSString *typeString) {
 
 + (BOOL)resolveInstanceMethod:(SEL)sel {
     NSString *selectorString = NSStringFromSelector(sel);
-    PAPropertyDescriptor *propertyDescriptor = _dynamicProperties[selectorString];
+    PAPropertyDescriptor *propertyDescriptor = [[[self sharedInstance] dynamicProperties] objectForKey:selectorString];
     if (propertyDescriptor) {
         IMP getter = 0;
         IMP setter = 0;
