@@ -13,12 +13,23 @@
 NSString * const PAPreferencesDidChangeNotification = @"PAPreferencesDidChangeNotification";
 NSString * const PAPreferencesChangedPropertyKey = @"PAPreferencesChangedPropertyKey";
 
+static NSMutableDictionary * _dynamicProperties;
+
+NS_INLINE NSString* NSStringFromUniqueSelector(Class class, SEL _cmd) {
+    NSString* selectorString = [NSString stringWithFormat:@"%@|%@", NSStringFromClass(class), NSStringFromSelector(_cmd)];
+    return selectorString;
+}
 
 NS_INLINE PAPropertyDescriptor * propertyDescriptorForSelector(id self, SEL _cmd) {
-    NSString *selectorString = NSStringFromSelector(_cmd);
-    PAPropertyDescriptor *descriptor = [[self dynamicProperties] objectForKey:selectorString];
+    NSString *selectorString = NSStringFromUniqueSelector([self class], _cmd);
+    PAPropertyDescriptor *descriptor = _dynamicProperties[selectorString];
     
     return descriptor;
+}
+
+NS_INLINE void setPropertyDescriptorForSelector(id self, SEL _cmd, PAPropertyDescriptor* descriptor) {
+    NSString *selectorString = NSStringFromUniqueSelector([self class], _cmd);
+    _dynamicProperties[selectorString] = descriptor;
 }
 
 NS_INLINE NSString * defaultsKeyForSelector(id self, SEL _cmd) {
@@ -167,10 +178,6 @@ void paprefCodableObjectSetter(id self, SEL _cmd, id value) {
 }
 
 
-@interface PAPreferences ()
-@property (strong, readwrite) NSMutableDictionary *dynamicProperties;
-@end
-
 @implementation PAPreferences
 
 + (instancetype)sharedInstance {
@@ -191,7 +198,7 @@ void paprefCodableObjectSetter(id self, SEL _cmd, id value) {
 - (instancetype)init {
     if (self = [super init]) {
         _shouldAutomaticallySynchronize = YES;
-        self.dynamicProperties = [[NSMutableDictionary alloc] init];
+        _dynamicProperties = [[NSMutableDictionary alloc] init];
         unsigned int cProps;
         objc_property_t *properties = class_copyPropertyList([self class], &cProps);
         for (int i=0; i<cProps; i++) {
@@ -223,8 +230,11 @@ void paprefCodableObjectSetter(id self, SEL _cmd, id value) {
                 } else {
                     if ([self isValidType:type]) {
                         NSString *defaultsKey = [[self class] defaultsKeyForPropertyName:name];
-                        self.dynamicProperties[getterName] = [[PAPropertyDescriptor alloc] initWithDefaultsKey:defaultsKey type:type isSetter:NO];
-                        self.dynamicProperties[setterName] = [[PAPropertyDescriptor alloc] initWithDefaultsKey:defaultsKey type:type isSetter:YES];
+
+                        PAPropertyDescriptor* getterDescriptor = [[PAPropertyDescriptor alloc] initWithDefaultsKey:defaultsKey type:type isSetter:NO];
+                        setPropertyDescriptorForSelector(self, NSSelectorFromString(getterName), getterDescriptor);
+                        PAPropertyDescriptor* setterDescriptor = [[PAPropertyDescriptor alloc] initWithDefaultsKey:defaultsKey type:type isSetter:YES];
+                        setPropertyDescriptorForSelector(self, NSSelectorFromString(setterName), setterDescriptor);
                     } else {
                         NSLog(@"Type of %@ is not supported by PAPreferences.", name);
                     }
@@ -295,8 +305,8 @@ NS_INLINE NSString * classNameForTypeString(NSString *typeString) {
 }
 
 + (BOOL)resolveInstanceMethod:(SEL)sel {
-    NSString *selectorString = NSStringFromSelector(sel);
-    PAPropertyDescriptor *propertyDescriptor = [[[self sharedInstance] dynamicProperties] objectForKey:selectorString];
+    NSString *selectorString = NSStringFromUniqueSelector([self class], sel);
+    PAPropertyDescriptor *propertyDescriptor = [_dynamicProperties objectForKey:selectorString];
     if (propertyDescriptor) {
         IMP getter = 0;
         IMP setter = 0;
