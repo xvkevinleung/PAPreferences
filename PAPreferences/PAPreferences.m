@@ -248,59 +248,55 @@ BOOL isValidType(NSString *type) {
     return key;
 }
 
-+ (void)initialize
-{
-    _dynamicProperties = [[NSMutableDictionary alloc] init];
-    unsigned int cProps;
-    objc_property_t *properties = class_copyPropertyList([self class], &cProps);
-    for (int i=0; i<cProps; i++) {
-        objc_property_t property = properties[i];
-        NSString *name = [NSString stringWithUTF8String:property_getName(property)];
-        NSString *getterName = [name copy];
-        NSString *setterName = [NSString stringWithFormat:@"set%@%@:", [[name substringToIndex:1] capitalizedString], [name substringFromIndex:1]];
-        NSString *type = nil;
-        BOOL isDynamic = NO;
-        BOOL shouldRetain = NO;
-        NSArray *elements = [[NSString stringWithUTF8String:property_getAttributes(property)] componentsSeparatedByString:@","];
-        for (NSString *element in elements) {
-            NSString *code = [element substringToIndex:1];
-            if ([code isEqualToString:@"T"]) {
-                type = [element substringFromIndex:1];
-            } else if ([code isEqualToString:@"G"]) {
-                getterName = [element substringFromIndex:1];
-            } else if ([code isEqualToString:@"S"]) {
-                setterName = [element substringFromIndex:1];
-            } else if ([code isEqualToString:@"D"]) {
-                isDynamic = YES;
-            } else if ([code isEqualToString:@"&"]) {
-                shouldRetain = YES;
-            }
-        }
-        if (isDynamic) {
-            if (shouldRetain) {
-                NSLog(@"Retained properties are not supported by PAPreferences, use assign instead.");
-            } else {
-                if (isValidType(type)) {
-                    NSString *defaultsKey = [[self class] defaultsKeyForPropertyName:name];
-
-                    PAPropertyDescriptor* getterDescriptor = [[PAPropertyDescriptor alloc] initWithDefaultsKey:defaultsKey type:type isSetter:NO];
-                    setPropertyDescriptorForSelector(self, NSSelectorFromString(getterName), getterDescriptor);
-                    PAPropertyDescriptor* setterDescriptor = [[PAPropertyDescriptor alloc] initWithDefaultsKey:defaultsKey type:type isSetter:YES];
-                    setPropertyDescriptorForSelector(self, NSSelectorFromString(setterName), setterDescriptor);
-                } else {
-                    NSLog(@"Type of %@ is not supported by PAPreferences.", name);
-                }
-            }
-        }
-    }
-    if (properties) {
-        free(properties);
-    }
-}
-
 - (instancetype)init {
     if (self = [super init]) {
         _shouldAutomaticallySynchronize = YES;
+        _dynamicProperties = [[NSMutableDictionary alloc] init];
+        unsigned int cProps;
+        objc_property_t *properties = class_copyPropertyList([self class], &cProps);
+        for (int i=0; i<cProps; i++) {
+            objc_property_t property = properties[i];
+            NSString *name = [NSString stringWithUTF8String:property_getName(property)];
+            NSString *getterName = [name copy];
+            NSString *setterName = [NSString stringWithFormat:@"set%@%@:", [[name substringToIndex:1] capitalizedString], [name substringFromIndex:1]];
+            NSString *type = nil;
+            BOOL isDynamic = NO;
+            BOOL shouldRetain = NO;
+            NSArray *elements = [[NSString stringWithUTF8String:property_getAttributes(property)] componentsSeparatedByString:@","];
+            for (NSString *element in elements) {
+                NSString *code = [element substringToIndex:1];
+                if ([code isEqualToString:@"T"]) {
+                    type = [element substringFromIndex:1];
+                } else if ([code isEqualToString:@"G"]) {
+                    getterName = [element substringFromIndex:1];
+                } else if ([code isEqualToString:@"S"]) {
+                    setterName = [element substringFromIndex:1];
+                } else if ([code isEqualToString:@"D"]) {
+                    isDynamic = YES;
+                } else if ([code isEqualToString:@"&"]) {
+                    shouldRetain = YES;
+                }
+            }
+            if (isDynamic) {
+                if (shouldRetain) {
+                    NSLog(@"Retained properties are not supported by PAPreferences, use assign instead.");
+                } else {
+                    if (isValidType(type)) {
+                        NSString *defaultsKey = [[self class] defaultsKeyForPropertyName:name];
+
+                        PAPropertyDescriptor* getterDescriptor = [[PAPropertyDescriptor alloc] initWithDefaultsKey:defaultsKey type:type isSetter:NO];
+                        setPropertyDescriptorForSelector(self, NSSelectorFromString(getterName), getterDescriptor);
+                        PAPropertyDescriptor* setterDescriptor = [[PAPropertyDescriptor alloc] initWithDefaultsKey:defaultsKey type:type isSetter:YES];
+                        setPropertyDescriptorForSelector(self, NSSelectorFromString(setterName), setterDescriptor);
+                    } else {
+                        NSLog(@"Type of %@ is not supported by PAPreferences.", name);
+                    }
+                }
+            }
+        }
+        if (properties) {
+            free(properties);
+        }
     }
 
     return self;
