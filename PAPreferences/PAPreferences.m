@@ -248,10 +248,13 @@ BOOL isValidType(NSString *type) {
     return key;
 }
 
++ (void)initialize {
+    _dynamicProperties = [[NSMutableDictionary alloc] init];
+}
+
 - (instancetype)init {
     if (self = [super init]) {
         _shouldAutomaticallySynchronize = YES;
-        _dynamicProperties = [[NSMutableDictionary alloc] init];
         unsigned int cProps;
         objc_property_t *properties = class_copyPropertyList([self class], &cProps);
         for (int i=0; i<cProps; i++) {
