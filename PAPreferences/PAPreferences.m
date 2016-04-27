@@ -249,7 +249,9 @@ BOOL isValidType(NSString *type) {
 }
 
 + (void)initialize {
-    _dynamicProperties = [[NSMutableDictionary alloc] init];
+    if (!_dynamicProperties) {
+        _dynamicProperties = [[NSMutableDictionary alloc] init];
+    }
 }
 
 - (instancetype)init {
