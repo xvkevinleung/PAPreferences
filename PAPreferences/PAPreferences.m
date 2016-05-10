@@ -249,7 +249,7 @@ BOOL isValidType(NSString *type) {
 }
 
 + (void)initialize {
-    if (!_dynamicProperties) {
+    if (self == [PAPreferences self]) {
         _dynamicProperties = [[NSMutableDictionary alloc] init];
     }
 }
