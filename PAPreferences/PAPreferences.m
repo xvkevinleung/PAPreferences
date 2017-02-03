@@ -14,6 +14,8 @@ NSString * const PAPreferencesDidChangeNotification = @"PAPreferencesDidChangeNo
 NSString * const PAPreferencesChangedPropertyKey = @"PAPreferencesChangedPropertyKey";
 
 static NSMutableDictionary * _dynamicProperties;
+static NSMutableSet* _instanceMethodAdded;
+
 
 NS_INLINE NSString* NSStringFromUniqueSelector(Class class, SEL _cmd) {
     NSString* selectorString = [NSString stringWithFormat:@"%@|%@", NSStringFromClass(class), NSStringFromSelector(_cmd)];
@@ -232,6 +234,7 @@ BOOL isValidType(NSString *type) {
     return NO;
 }
 
+
 @implementation PAPreferences
 
 + (instancetype)sharedInstance {
@@ -251,6 +254,7 @@ BOOL isValidType(NSString *type) {
 + (void)initialize {
     if (self == [PAPreferences self]) {
         _dynamicProperties = [[NSMutableDictionary alloc] init];
+        _instanceMethodAdded = [NSMutableSet set];
     }
 }
 
@@ -310,6 +314,11 @@ BOOL isValidType(NSString *type) {
 + (BOOL)resolveInstanceMethod:(SEL)sel {
     NSString *selectorString = NSStringFromUniqueSelector([self class], sel);
     PAPropertyDescriptor *propertyDescriptor = [_dynamicProperties objectForKey:selectorString];
+
+    if ([_instanceMethodAdded containsObject:selectorString]) {
+        return YES;
+    }
+
     if (propertyDescriptor) {
         IMP getter = 0;
         IMP setter = 0;
@@ -387,7 +396,11 @@ BOOL isValidType(NSString *type) {
             sprintf(types, "%c@:", typeIndicator);
             imp = getter;
         }
-        class_addMethod(self, sel, imp, types);
+
+        BOOL methodAdded = class_addMethod(self, sel, imp, types);
+        if (methodAdded) {
+            [_instanceMethodAdded addObject:selectorString];
+        }
         return YES;
     }
     
